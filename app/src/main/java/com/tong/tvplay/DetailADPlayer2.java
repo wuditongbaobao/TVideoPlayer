@@ -12,6 +12,9 @@ import com.shuyu.gsyvideoplayer.listener.LockClickListener;
 import com.shuyu.gsyvideoplayer.video.GSYADVideoPlayer;
 import com.shuyu.gsyvideoplayer.video.GSYSampleADVideoPlayer;
 import com.shuyu.gsyvideoplayer.video.base.GSYVideoPlayer;
+import com.tong.tvplay.utils.FileUtil;
+
+import java.util.ArrayList;
 
 /**
  * 带广告播放，支持中间插入广告模式
@@ -59,16 +62,54 @@ public class DetailADPlayer2 extends GSYBaseADActivityDetail<GSYSampleADVideoPla
             public void onProgress(int progress, int secProgress, int currentPosition, int duration) {
                 //在5秒的时候弹出中间广告
                 int currentSecond = currentPosition / 1000;
-                if (currentSecond == 5 && currentSecond != preSecond) {
-                    normalPlayer.getCurrentPlayer().onVideoPause();
-                    getGSYADVideoOptionBuilder().setUrl(urlAd2).build(adPlayer);
-                    startAdPlay();
-                }
+//                if (currentSecond == 5 && currentSecond != preSecond) {
+//                    normalPlayer.getCurrentPlayer().onVideoPause();
+//                    getGSYADVideoOptionBuilder().setUrl(urlAd2).build(adPlayer);
+//                    startAdPlay();
+//                }
                 preSecond = currentSecond;
             }
         });
 
-        normalPlayer.setStartAfterPrepared(false);
+
+        ArrayList<String> videos = FileUtil.scanFiles("/sdcard/tong_video/");
+        ArrayList<String> ads = new ArrayList<>();
+        ArrayList<String> normals = new ArrayList<>();
+        for (String path : videos) {
+            if (!TextUtils.isEmpty(path)) {
+                if (path.contains("ad_")) {
+                    ads.add(path);
+                } else {
+                    normals.add(path);
+                }
+            }
+        }
+
+        ArrayList<GSYSampleADVideoPlayer.GSYADVideoModel> urls = new ArrayList<>();
+        int adsLen = ads.size();
+        int normalLen = normals.size();
+        if (0 < adsLen) {
+            for (int i = 0; i < normalLen; i++) {
+                //广告1
+                urls.add(new GSYSampleADVideoPlayer.GSYADVideoModel(ads.get(i % adsLen),
+                        "", GSYSampleADVideoPlayer.GSYADVideoModel.TYPE_AD));
+                //正式内容1
+                urls.add(new GSYSampleADVideoPlayer.GSYADVideoModel(normals.get(i),
+                        "正文1标题", GSYSampleADVideoPlayer.GSYADVideoModel.TYPE_NORMAL));
+            }
+        }
+
+        //广告在线
+        urls.add(new GSYSampleADVideoPlayer.GSYADVideoModel("http://7xjmzj.com1.z0.glb.clouddn.com/20171026175005_JObCxCE2.mp4",
+                "", GSYSampleADVideoPlayer.GSYADVideoModel.TYPE_AD, true));
+
+        //正式内容在线
+        urls.add(new GSYSampleADVideoPlayer.GSYADVideoModel("http://9890.vod.myqcloud.com/9890_4e292f9a3dd011e6b4078980237cc3d3.f30.mp4",
+                "正文2标题", GSYSampleADVideoPlayer.GSYADVideoModel.TYPE_NORMAL));
+
+        normalPlayer.setAdUp(urls, true, 0);
+
+        normalPlayer.setStartAfterPrepared(true);
         normalPlayer.setReleaseWhenLossAudio(false);
     }
 
@@ -89,14 +130,13 @@ public class DetailADPlayer2 extends GSYBaseADActivityDetail<GSYSampleADVideoPla
         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageView.setImageResource(R.mipmap.xxx1);
         return getCommonBuilder()
-                .setUrl(url)
+//                .setUrl(url)
                 .setThumbImageView(imageView);
     }
 
     @Override
     public GSYVideoOptionBuilder getGSYADVideoOptionBuilder() {
-        return getCommonBuilder()
-                .setUrl(urlAd);
+        return getCommonBuilder();
     }
 
     @Override
@@ -110,7 +150,7 @@ public class DetailADPlayer2 extends GSYBaseADActivityDetail<GSYSampleADVideoPla
      */
     @Override
     public boolean isNeedAdOnStart() {
-        return true;
+        return false;
     }
 
     /**
